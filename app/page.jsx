@@ -1,5 +1,6 @@
 'use client'
-import React, { useState, useEffect, useRef } from 'react'
+import { v4 as uuidv4 } from 'uuid'
+import { useState, useEffect, useRef } from 'react'
 import Navbar from './components/Navbar'
 import { motion } from 'framer-motion'
 import { GridBackgroundDemo } from './components/GridBackgroundDemo'
@@ -14,6 +15,17 @@ export default function Home() {
   const abortControllerRef = useRef(null)
   const [hovered, setHovered] = useState(false)
   const [hoveredClear, setHoveredClear] = useState(false)
+  const [sessionId, setSessionId] = useState(null)
+
+  useEffect(() => {
+    // Generate a new session ID and store it in localStorage so it persists
+    let id = localStorage.getItem('sessionId')
+    if (!id) {
+      id = uuidv4()
+      localStorage.setItem('sessionId', id)
+    }
+    setSessionId(id)
+  }, [])
 
   const stopGeneration = () => {
     if (abortControllerRef.current) {
@@ -39,7 +51,7 @@ export default function Home() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userInput }),
+        body: JSON.stringify({ sessionId, message: userInput }),
         signal: abortControllerRef.current.signal
       })
 
@@ -225,10 +237,22 @@ export default function Home() {
           </div>
           <div className='relative group'>
             <button
-              onClick={() => setMessages([])}
+              onClick={() => {
+                if (!isGenerating) {
+                  // Clear messages
+                  setMessages([])
+                  // Reset sessionId
+                  const newSessionId = uuidv4()
+                  localStorage.setItem('sessionId', newSessionId)
+                  setSessionId(newSessionId)
+                }
+              }}
               onMouseEnter={() => setHoveredClear(true)}
               onMouseLeave={() => setHoveredClear(false)}
-              className='p-3 rounded-lg border border-black/20 dark:border-white/20 bg-transparent text-black/60 dark:text-white/60 hover:bg-gray-100 dark:hover:bg-neutral-800 transition-all duration-200'
+              disabled={isGenerating} // disable while generating
+              className={`p-3 rounded-lg border border-black/20 dark:border-white/20 bg-transparent text-black/60 dark:text-white/60 hover:bg-gray-100 dark:hover:bg-neutral-800 transition-all duration-200 ${
+                isGenerating ? 'cursor-not-allowed opacity-50' : ''
+              }`}
             >
               <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
                 <path d='M3 6h18M9 6v12m6-12v12' strokeLinecap='round' strokeLinejoin='round' />
@@ -242,7 +266,7 @@ export default function Home() {
                   animate={{ opacity: 1, y: 0, x: '-50%' }}
                   exit={{ opacity: 0, y: 2, x: '-50%' }}
                   transition={{ duration: 0.2 }}
-                  className='absolute -top-8 left-1/2 w-fit rounded-md border border-gray-200 bg-gray-100 px-2 py-0.5 text-xs whitespace-pre text-neutral-700 dark:border-neutral-900 dark:bg-neutral-800 dark:dark:text-white'
+                  className='absolute -top-8 left-1/2 w-fit rounded-md border border-gray-200 bg-gray-100 px-2 py-0.5 text-xs whitespace-pre text-neutral-700 dark:border-neutral-900 dark:bg-neutral-800 dark:text-white'
                 >
                   Clear
                 </motion.div>

@@ -4,23 +4,52 @@ import { GENERAL_FORMAT } from '@/app/lib/chatFormat'
 
 const ai = new GoogleGenAI({})
 
+// In-memory conversation store (keyed by sessionId)
+const conversations = new Map()
+
+// Helper to collect full response text from a streamed response
+async function collectFullText(response) {
+  let text = ''
+  if (response[Symbol.asyncIterator]) {
+    for await (const chunk of response) {
+      if (chunk.text) text += chunk.text
+    }
+  } else {
+    text = response.text || ''
+  }
+  return text
+}
+
 export async function POST(req) {
   try {
-    const { message } = await req.json()
+    const { sessionId, message } = await req.json()
 
-    // Enable streaming
+    if (!sessionId) {
+      return NextResponse.json({ error: 'sessionId is required' }, { status: 400 })
+    }
+
+    // Initialize conversation if missing
+    if (!conversations.has(sessionId)) {
+      conversations.set(sessionId, [
+        {
+          role: 'model', // system messages now use 'model'
+          parts: [{ text: 'You are a helpful assistant.' }]
+        }
+      ])
+    }
+
+    const history = conversations.get(sessionId)
+
+    // Append user message
+    history.push({
+      role: 'user', // must be 'user'
+      parts: [{ text: `${GENERAL_FORMAT}\n\nUser question: ${message}` }]
+    })
+
+    // Generate AI response with conversation history
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: [
-        {
-          role: 'user',
-          parts: [
-            {
-              text: `${GENERAL_FORMAT}\n\nUser question: ${message}`
-            }
-          ]
-        }
-      ],
+      contents: history,
       stream: true
     })
 
@@ -28,41 +57,41 @@ export async function POST(req) {
       async start(controller) {
         try {
           if (response[Symbol.asyncIterator]) {
-            // Real streaming
             for await (const chunk of response) {
-              const chunkText = chunk.text
-              if (chunkText) {
-                controller.enqueue(new TextEncoder().encode(chunkText))
-              }
+              if (chunk.text) controller.enqueue(new TextEncoder().encode(chunk.text))
             }
           } else {
-            // Fallback: per-character streaming
             const fullText = response.text || ''
             for (let i = 0; i < fullText.length; i++) {
-              // Only enqueue if controller is not closed
               try {
                 controller.enqueue(new TextEncoder().encode(fullText[i]))
-              } catch (err) {
-                // If controller is closed, break loop gracefully
+              } catch {
                 break
               }
-              await new Promise((resolve) => setTimeout(resolve, 20)) // simulate typing
+              await new Promise((resolve) => setTimeout(resolve, 20))
             }
-          }
-
-          // Close the controller if not already closed
-          try {
-            controller.close()
-          } catch (err) {
-            // already closed, do nothing
           }
         } catch (error) {
           console.error('Streaming error:', error)
           try {
             controller.error(error)
           } catch {}
+        } finally {
+          // Only attempt to close once
+          try {
+            if (!controller.desiredSize) return // optional safety check
+            controller.close()
+          } catch {}
         }
       }
+    })
+
+    // Collect full text after streaming and store assistant response in history
+    collectFullText(response).then((assistantText) => {
+      history.push({
+        role: 'model', // assistant messages now use 'model'
+        parts: [{ text: assistantText }]
+      })
     })
 
     return new Response(stream, {
