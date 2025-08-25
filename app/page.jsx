@@ -32,7 +32,7 @@ export default function Home() {
 
     abortControllerRef.current = new AbortController()
 
-    setMessages((prev) => [...prev, { role: 'dreGPT', text: '' }])
+    setMessages((prev) => [...prev, { role: 'DreGPT', text: '' }])
 
     try {
       const res = await fetch('/api/chat', {
@@ -69,7 +69,7 @@ export default function Home() {
 
         setMessages((prev) => {
           const newMessages = [...prev]
-          if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'dreGPT') {
+          if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'DreGPT') {
             newMessages[newMessages.length - 1] = {
               ...newMessages[newMessages.length - 1],
               text: accumulatedText
@@ -86,7 +86,7 @@ export default function Home() {
       console.error('Error:', error)
       setMessages((prev) => {
         const newMessages = [...prev]
-        if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'dreGPT') {
+        if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'DreGPT') {
           newMessages[newMessages.length - 1] = {
             ...newMessages[newMessages.length - 1],
             text: 'Sorry, there was an error processing your request.'
@@ -125,7 +125,7 @@ export default function Home() {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.1, duration: 0.6 }}
           >
-            dreGPT
+            DreGPT
           </motion.h1>
 
           <motion.p
@@ -134,12 +134,12 @@ export default function Home() {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.6 }}
           >
-            Say hello to <b>dreGPT</b> — a simple yet sharp chatbot powered by <b>Next.js</b> and Google's{' '}
+            Say hello to <b>DreGPT</b> — a simple yet sharp chatbot powered by <b>Next.js</b> and Google's{' '}
             <b>Gemini AI</b>.
           </motion.p>
         </motion.div>
 
-        <div className='h-128 overflow-y-auto border border-black/20 dark:border-white/20 bg-transparent backdrop-blur-sm p-6 rounded-lg mb-4 space-y-4'>
+        <div className='h-116 overflow-y-auto border border-black/20 dark:border-white/20 bg-transparent backdrop-blur-sm p-6 rounded-lg mb-4 space-y-4'>
           {messages.map((m, i) => (
             <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div
@@ -153,7 +153,7 @@ export default function Home() {
                   <span className='font-semibold text-black dark:text-white'>{m.role}:</span>{' '}
                   <span className='text-black dark:text-white'>
                     {m.text}
-                    {isGenerating && i === messages.length - 1 && m.role === 'dreGPT' && (
+                    {isGenerating && i === messages.length - 1 && m.role === 'DreGPT' && (
                       <span className='inline-block w-2 h-4 bg-black dark:bg-white ml-1 animate-pulse' />
                     )}
                   </span>
