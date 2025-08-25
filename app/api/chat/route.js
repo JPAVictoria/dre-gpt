@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { GoogleGenAI } from '@google/genai'
+import { GENERAL_FORMAT } from '@/app/lib/chatFormat'
 
 const ai = new GoogleGenAI({})
 
@@ -10,7 +11,16 @@ export async function POST(req) {
     // Enable streaming
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: message,
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            {
+              text: `${GENERAL_FORMAT}\n\nUser question: ${message}`
+            }
+          ]
+        }
+      ],
       stream: true
     })
 
