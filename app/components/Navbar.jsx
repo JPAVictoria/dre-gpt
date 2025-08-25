@@ -29,14 +29,14 @@ const dockItems = [
 export default function Navbar() {
   return (
     <motion.div
-      className='fixed bottom-6 left-1/2 transform -translate-x-1/2 z-30'
+      className='fixed right-6 top-1/2 -translate-y-1/2 z-30'
       initial={{
-        y: 100,
+        x: 100,
         opacity: 0,
         scale: 0.8
       }}
       animate={{
-        y: 0,
+        x: 0,
         opacity: 1,
         scale: 1
       }}
@@ -48,7 +48,12 @@ export default function Navbar() {
         duration: 0.6
       }}
     >
-      <FloatingDock items={dockItems} />
+      {/* Force vertical layout */}
+      <FloatingDock
+        items={dockItems}
+        desktopClassName='flex flex-col items-center justify-center gap-4 h-auto w-16 py-4 px-2'
+        mobileClassName='flex-col'
+      />
     </motion.div>
   )
 }

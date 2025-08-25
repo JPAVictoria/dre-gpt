@@ -145,7 +145,7 @@ export default function Home() {
           </motion.p>
         </motion.div>
 
-        <div className='h-96 overflow-y-auto border border-black/20 dark:border-white/20 bg-transparent backdrop-blur-sm p-6 rounded-lg mb-4 space-y-4'>
+        <div className='h-128 overflow-y-auto border border-black/20 dark:border-white/20 bg-transparent backdrop-blur-sm p-6 rounded-lg mb-4 space-y-4'>
           {messages.map((m, i) => (
             <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div
