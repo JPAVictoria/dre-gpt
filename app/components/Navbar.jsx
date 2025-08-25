@@ -2,33 +2,23 @@
 import { motion } from 'framer-motion'
 import { AnimatedThemeToggler } from '@/components/magicui/animated-theme-toggler'
 import { FloatingDock } from '@/components/ui/floating-dock'
-import { IconHome, IconUser, IconCode, IconMail, IconBuildingSkyscraper } from '@tabler/icons-react'
+import { IconCode, IconBrandGithub, IconBrandLinkedin } from '@tabler/icons-react'
 
 const dockItems = [
   {
-    title: 'Home',
-    icon: <IconHome className='h-full w-full text-neutral-500 dark:text-neutral-300' />,
-    href: '/'
-  },
-  {
-    title: 'About',
-    icon: <IconUser className='h-full w-full text-neutral-500 dark:text-neutral-300' />,
-    href: '/about'
-  },
-  {
-    title: 'Projects',
+    title: 'Portfolio',
     icon: <IconCode className='h-full w-full text-neutral-500 dark:text-neutral-300' />,
-    href: '/projects'
+    href: 'https://dre-dev.vercel.app/'
   },
   {
-    title: 'Contacts',
-    icon: <IconMail className='h-full w-full text-neutral-500 dark:text-neutral-300' />,
-    href: '/contacts'
+    title: 'GitHub',
+    icon: <IconBrandGithub className='h-full w-full text-neutral-500 dark:text-neutral-300' />,
+    href: 'https://github.com/JPAVictoria'
   },
   {
-    title: 'Experiences',
-    icon: <IconBuildingSkyscraper className='h-full w-full text-neutral-500 dark:text-neutral-300' />,
-    href: '/experiences'
+    title: 'LinkedIn',
+    icon: <IconBrandLinkedin className='h-full w-full text-neutral-500 dark:text-neutral-300' />,
+    href: 'https://www.linkedin.com/in/jpavictoria/'
   },
   {
     title: 'Theme',
@@ -54,7 +44,7 @@ export default function Navbar() {
         type: 'spring',
         stiffness: 200,
         damping: 25,
-        delay: 0.8, 
+        delay: 0.8,
         duration: 0.6
       }}
     >

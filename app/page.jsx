@@ -1,24 +1,8 @@
 'use client'
 import { useState } from 'react'
 import Navbar from './components/Navbar'
-import { cn } from '@/lib/utils'
-import React from 'react'
-
-export function GridBackgroundDemo() {
-  return (
-    <div className='relative flex h-[50rem] w-full items-center justify-center bg-white dark:bg-black'>
-      <div
-        className={cn(
-          'absolute inset-0',
-          '[background-size:40px_40px]',
-          '[background-image:linear-gradient(to_right,#e4e4e7_1px,transparent_1px),linear-gradient(to_bottom,#e4e4e7_1px,transparent_1px)]',
-          'dark:[background-image:linear-gradient(to_right,#262626_1px,transparent_1px),linear-gradient(to_bottom,#262626_1px,transparent_1px)]'
-        )}
-      />
-      <div className='pointer-events-none absolute inset-0 flex items-center justify-center bg-white [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)] dark:bg-black'></div>
-    </div>
-  )
-}
+import { motion } from 'framer-motion'
+import { GridBackgroundDemo } from './components/GridBackgroundDemo'
 
 export default function Home() {
   const [messages, setMessages] = useState([])
@@ -45,11 +29,34 @@ export default function Home() {
 
   return (
     <div className='min-h-screen relative overflow-hidden'>
-      {/* Spotlight Background */}
       <GridBackgroundDemo />
-
-      {/* Main Content */}
       <div className='relative z-10 max-w-lg mx-auto p-4'>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className='text-center mt-20 mb-12'
+        >
+          <motion.h1
+            className='bg-clip-text text-transparent text-center bg-gradient-to-b from-neutral-900 to-neutral-700 dark:from-neutral-600 dark:to-white 
+             text-3xl md:text-5xl font-sans font-bold tracking-tight mb-6 leading-normal'
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.1, duration: 0.6 }}
+          >
+            dreGPT
+          </motion.h1>
+
+          <motion.p
+            className='max-w-2xl mx-auto text-base md:text-lg text-neutral-700 dark:text-neutral-400 text-center leading-relaxed'
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+          >
+            Say hello to <b>dreGPT</b> — a simple yet sharp chatbot powered by <b>Next.js</b> and Google’s{' '}
+            <b>Gemini AI</b>.
+          </motion.p>
+        </motion.div>
         <div className='h-96 overflow-y-auto border border-gray-300/20 bg-black/20 backdrop-blur-sm p-2 rounded mb-3'>
           {messages.map((m, i) => (
             <p key={i} className={m.role === 'user' ? 'text-blue-400' : 'text-green-400'}>
