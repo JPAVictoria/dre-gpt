@@ -12,6 +12,7 @@ export default function Home() {
   const [isGenerating, setIsGenerating] = useState(false)
   const abortControllerRef = useRef(null)
   const [hovered, setHovered] = useState(false)
+  const [hoveredClear, setHoveredClear] = useState(false)
 
   const stopGeneration = () => {
     if (abortControllerRef.current) {
@@ -29,10 +30,8 @@ export default function Home() {
     setInput('')
     setIsGenerating(true)
 
-    
     abortControllerRef.current = new AbortController()
 
-    
     setMessages((prev) => [...prev, { role: 'dreGPT', text: '' }])
 
     try {
@@ -43,7 +42,6 @@ export default function Home() {
         signal: abortControllerRef.current.signal
       })
 
-      
       if (abortControllerRef.current.signal.aborted) {
         return
       }
@@ -61,7 +59,6 @@ export default function Home() {
 
         if (done) break
 
-        
         if (abortControllerRef.current.signal.aborted) {
           reader.cancel()
           return
@@ -70,7 +67,6 @@ export default function Home() {
         const chunk = decoder.decode(value, { stream: true })
         accumulatedText += chunk
 
-        
         setMessages((prev) => {
           const newMessages = [...prev]
           if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'dreGPT') {
@@ -83,7 +79,6 @@ export default function Home() {
         })
       }
     } catch (error) {
-      
       if (error.name === 'AbortError') {
         return
       }
@@ -105,7 +100,6 @@ export default function Home() {
     abortControllerRef.current = null
   }
 
-  
   useEffect(() => {
     return () => {
       if (abortControllerRef.current) {
@@ -207,6 +201,32 @@ export default function Home() {
                   className='absolute -top-8 left-1/2 w-fit rounded-md border border-gray-200 bg-gray-100 px-2 py-0.5 text-xs whitespace-pre text-neutral-700 dark:border-neutral-900 dark:bg-neutral-800 dark:text-white'
                 >
                   Stop
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+          <div className='relative group'>
+            <button
+              onClick={() => setMessages([])}
+              onMouseEnter={() => setHoveredClear(true)}
+              onMouseLeave={() => setHoveredClear(false)}
+              className='p-3 rounded-lg border border-black/20 dark:border-white/20 bg-transparent text-black/60 dark:text-white/60 hover:bg-gray-100 dark:hover:bg-neutral-800 transition-all duration-200'
+            >
+              <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
+                <path d='M3 6h18M9 6v12m6-12v12' strokeLinecap='round' strokeLinejoin='round' />
+              </svg>
+            </button>
+
+            <AnimatePresence>
+              {hoveredClear && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, x: '-50%' }}
+                  animate={{ opacity: 1, y: 0, x: '-50%' }}
+                  exit={{ opacity: 0, y: 2, x: '-50%' }}
+                  transition={{ duration: 0.2 }}
+                  className='absolute -top-8 left-1/2 w-fit rounded-md border border-gray-200 bg-gray-100 px-2 py-0.5 text-xs whitespace-pre text-neutral-700 dark:border-neutral-900 dark:bg-neutral-800 dark:text-white'
+                >
+                  Clear
                 </motion.div>
               )}
             </AnimatePresence>

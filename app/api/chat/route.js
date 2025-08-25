@@ -7,40 +7,50 @@ export async function POST(req) {
   try {
     const { message } = await req.json()
 
-    // Use streaming method
+    // Enable streaming
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: message,
-      stream: true // Enable streaming
+      stream: true
     })
 
-    // Create a readable stream
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          // Check if response is iterable (streaming)
           if (response[Symbol.asyncIterator]) {
+            // Real streaming
             for await (const chunk of response) {
               const chunkText = chunk.text
               if (chunkText) {
-                // Send each chunk as it arrives
                 controller.enqueue(new TextEncoder().encode(chunkText))
               }
             }
           } else {
-            // Fallback for non-streaming response
-            const fullText = response.text
-            // Simulate streaming by sending character by character
+            // Fallback: per-character streaming
+            const fullText = response.text || ''
             for (let i = 0; i < fullText.length; i++) {
-              controller.enqueue(new TextEncoder().encode(fullText[i]))
-              // Small delay to simulate streaming effect
-              await new Promise((resolve) => setTimeout(resolve, 20))
+              // Only enqueue if controller is not closed
+              try {
+                controller.enqueue(new TextEncoder().encode(fullText[i]))
+              } catch (err) {
+                // If controller is closed, break loop gracefully
+                break
+              }
+              await new Promise((resolve) => setTimeout(resolve, 20)) // simulate typing
             }
           }
-          controller.close()
+
+          // Close the controller if not already closed
+          try {
+            controller.close()
+          } catch (err) {
+            // already closed, do nothing
+          }
         } catch (error) {
           console.error('Streaming error:', error)
-          controller.error(error)
+          try {
+            controller.error(error)
+          } catch {}
         }
       }
     })
