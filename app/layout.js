@@ -7,7 +7,7 @@ const inter = Inter({
 })
 
 export const metadata = {
-  title: 'dreGPT',
+  title: 'DreGPT',
   description: "Simple yet sharp chatbot powered by Next.js and Google's Gemini AI"
 }
 
