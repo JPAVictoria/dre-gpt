@@ -1,125 +1,13 @@
 'use client'
-import { v4 as uuidv4 } from 'uuid'
-import { useState, useEffect, useRef } from 'react'
-import Navbar from './components/Navbar'
 import { motion } from 'framer-motion'
+import Navbar from './components/Navbar'
 import { GridBackgroundDemo } from './components/GridBackgroundDemo'
-import { InteractiveHoverButton } from '@/components/magicui/interactive-hover-button'
-import { AnimatePresence } from 'motion/react'
-import ReactMarkdown from 'react-markdown'
+import ChatMessages from './components/ChatMessages'
+import ChatInput from './components/ChatInput'
+import { useChat } from './hooks/useChat'
 
 export default function Home() {
-  const [messages, setMessages] = useState([])
-  const [input, setInput] = useState('')
-  const [isGenerating, setIsGenerating] = useState(false)
-  const abortControllerRef = useRef(null)
-  const [hovered, setHovered] = useState(false)
-  const [hoveredClear, setHoveredClear] = useState(false)
-  const [sessionId, setSessionId] = useState(null)
-
-  useEffect(() => {
-    // Generate a new session ID and store it in localStorage so it persists
-    let id = localStorage.getItem('sessionId')
-    if (!id) {
-      id = uuidv4()
-      localStorage.setItem('sessionId', id)
-    }
-    setSessionId(id)
-  }, [])
-
-  const stopGeneration = () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort()
-      abortControllerRef.current = null
-    }
-    setIsGenerating(false)
-  }
-
-  const sendMessage = async () => {
-    if (!input.trim() || isGenerating) return
-
-    setMessages((prev) => [...prev, { role: 'user', text: input }])
-    const userInput = input
-    setInput('')
-    setIsGenerating(true)
-
-    abortControllerRef.current = new AbortController()
-
-    setMessages((prev) => [...prev, { role: 'DreGPT', text: '' }])
-
-    try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId, message: userInput }),
-        signal: abortControllerRef.current.signal
-      })
-
-      if (abortControllerRef.current.signal.aborted) {
-        return
-      }
-
-      if (!res.ok) {
-        throw new Error('Failed to fetch response')
-      }
-
-      const reader = res.body.getReader()
-      const decoder = new TextDecoder()
-      let accumulatedText = ''
-
-      while (true) {
-        const { done, value } = await reader.read()
-
-        if (done) break
-
-        if (abortControllerRef.current.signal.aborted) {
-          reader.cancel()
-          return
-        }
-
-        const chunk = decoder.decode(value, { stream: true })
-        accumulatedText += chunk
-
-        setMessages((prev) => {
-          const newMessages = [...prev]
-          if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'DreGPT') {
-            newMessages[newMessages.length - 1] = {
-              ...newMessages[newMessages.length - 1],
-              text: accumulatedText
-            }
-          }
-          return newMessages
-        })
-      }
-    } catch (error) {
-      if (error.name === 'AbortError') {
-        return
-      }
-
-      console.error('Error:', error)
-      setMessages((prev) => {
-        const newMessages = [...prev]
-        if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'DreGPT') {
-          newMessages[newMessages.length - 1] = {
-            ...newMessages[newMessages.length - 1],
-            text: 'Sorry, there was an error processing your request.'
-          }
-        }
-        return newMessages
-      })
-    }
-
-    setIsGenerating(false)
-    abortControllerRef.current = null
-  }
-
-  useEffect(() => {
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort()
-      }
-    }
-  }, [])
+  const { messages, input, setInput, isGenerating, sendMessage, stopGeneration, clearChat } = useChat()
 
   return (
     <div className='min-h-screen relative overflow-hidden'>
@@ -152,132 +40,15 @@ export default function Home() {
           </motion.p>
         </motion.div>
 
-        <div className='h-116 overflow-y-auto border border-black/20 dark:border-white/20 bg-transparent backdrop-blur-sm p-6 rounded-lg mb-4 space-y-6'>
-          {messages.map((m, i) => (
-            <div key={i} className='w-full'>
-              <div className={`flex items-start gap-4 ${m.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                <div className='flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-neutral-200 to-neutral-400 dark:from-neutral-600 dark:to-neutral-800 flex items-center justify-center'>
-                  <span className='text-xs font-semibold text-neutral-700 dark:text-neutral-200'>
-                    {m.role === 'user' ? 'U' : 'D'}
-                  </span>
-                </div>
-
-                <div className={`flex-1 max-w-[calc(100%-4rem)] ${m.role === 'user' ? 'text-right' : 'text-left'}`}>
-                  <div className='mb-1'>
-                    <span className='text-sm font-semibold text-neutral-600 dark:text-neutral-400'>
-                      {m.role === 'user' ? 'You' : 'DreGPT'}
-                    </span>
-                  </div>
-
-                  <div
-                    className={`inline-block p-4 rounded-lg border max-w-full ${
-                      m.role === 'user'
-                        ? 'bg-blue-500/10 border-blue-500/30 dark:bg-blue-500/20 dark:border-blue-500/40'
-                        : 'bg-transparent border-black/30 dark:border-white/30'
-                    }`}
-                  >
-                    <div
-                      className={`leading-relaxed text-black dark:text-white ${
-                        m.role === 'user' ? 'text-right' : 'text-left'
-                      }`}
-                    >
-                      <ReactMarkdown>{m.text}</ReactMarkdown>
-                      {isGenerating && i === messages.length - 1 && m.role === 'DreGPT' && (
-                        <span className='inline-block w-2 h-4 bg-black dark:bg-white ml-1 animate-pulse' />
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className='flex gap-3'>
-          <input
-            className='border border-black/20 dark:border-white/20 bg-transparent backdrop-blur-sm rounded-lg p-3 flex-1 text-black dark:text-white placeholder-black/60 dark:placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-black/30 dark:focus:ring-white/30'
-            placeholder='Say something...'
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-            disabled={isGenerating}
-          />
-
-          <div className='relative group'>
-            <button
-              onClick={stopGeneration}
-              disabled={!isGenerating}
-              className={`p-3 rounded-lg border transition-all duration-200 ${
-                isGenerating
-                  ? 'border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 cursor-pointer'
-                  : 'border-black/20 dark:border-white/20 bg-transparent text-black/40 dark:text-white/40 cursor-not-allowed'
-              }`}
-              onMouseEnter={() => setHovered(true)}
-              onMouseLeave={() => setHovered(false)}
-            >
-              <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
-                <rect x='6' y='6' width='12' height='12' rx='2' />
-              </svg>
-            </button>
-
-            {/* Tooltip */}
-            <AnimatePresence>
-              {hovered && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10, x: '-50%' }}
-                  animate={{ opacity: 1, y: 0, x: '-50%' }}
-                  exit={{ opacity: 0, y: 2, x: '-50%' }}
-                  transition={{ duration: 0.2 }}
-                  className='absolute -top-8 left-1/2 w-fit rounded-md border border-gray-200 bg-gray-100 px-2 py-0.5 text-xs whitespace-pre text-neutral-700 dark:border-neutral-900 dark:bg-neutral-800 dark:text-white'
-                >
-                  Stop
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-          <div className='relative group'>
-            <button
-              onClick={() => {
-                if (!isGenerating) {
-                  // Clear messages
-                  setMessages([])
-                  // Reset sessionId
-                  const newSessionId = uuidv4()
-                  localStorage.setItem('sessionId', newSessionId)
-                  setSessionId(newSessionId)
-                }
-              }}
-              onMouseEnter={() => setHoveredClear(true)}
-              onMouseLeave={() => setHoveredClear(false)}
-              disabled={isGenerating} // disable while generating
-              className={`p-3 rounded-lg border border-black/20 dark:border-white/20 bg-transparent text-black/60 dark:text-white/60 hover:bg-gray-100 dark:hover:bg-neutral-800 transition-all duration-200 ${
-                isGenerating ? 'cursor-not-allowed opacity-50' : ''
-              }`}
-            >
-              <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'>
-                <path d='M3 6h18M9 6v12m6-12v12' strokeLinecap='round' strokeLinejoin='round' />
-              </svg>
-            </button>
-
-            <AnimatePresence>
-              {hoveredClear && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10, x: '-50%' }}
-                  animate={{ opacity: 1, y: 0, x: '-50%' }}
-                  exit={{ opacity: 0, y: 2, x: '-50%' }}
-                  transition={{ duration: 0.2 }}
-                  className='absolute -top-8 left-1/2 w-fit rounded-md border border-gray-200 bg-gray-100 px-2 py-0.5 text-xs whitespace-pre text-neutral-700 dark:border-neutral-900 dark:bg-neutral-800 dark:text-white'
-                >
-                  Clear
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          <InteractiveHoverButton onClick={sendMessage} disabled={isGenerating}>
-            {isGenerating ? 'Generating...' : 'Send'}
-          </InteractiveHoverButton>
-        </div>
+        <ChatMessages messages={messages} isGenerating={isGenerating} />
+        <ChatInput
+          input={input}
+          setInput={setInput}
+          onSend={sendMessage}
+          onStop={stopGeneration}
+          onClear={clearChat}
+          isGenerating={isGenerating}
+        />
         <Navbar />
       </div>
     </div>
